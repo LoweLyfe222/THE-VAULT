@@ -33,7 +33,7 @@ fs.writeFileSync(path.join(assetsDir,'signature-angel-original.webp'),Buffer.fro
 fs.writeFileSync(path.join(assetsDir,'make-gas-original.png'),Buffer.from(hat[1].split(',')[1],'base64'));
 console.log('Original product images extracted into real /assets/ files');
 // Remove only the exact upper duplicate Dad Hat entry from the original catalog array.
-const upperHatRecord = ",\\n {\"name\": \"Make Gas $2.40 Again Dad Hat\", \"brand\": null, \"category\": \"extras\", \"price\": 26.99, \"image\": \"https://warm-medovik-b368bb.netlify.app/assets/make-gas-cap.png\", \"cap\": true}";
+const upperHatRecord = '{"name": "Make Gas $2.40 Again Dad Hat", "brand": null, "category": "extras", "price": 26.99, "image": "https://warm-medovik-b368bb.netlify.app/assets/make-gas-cap.png", "cap": true}';
 if (html.split(upperHatRecord).length !== 2) throw new Error('Upper hat entry mismatch; refusing unsafe build');
 const catalogHtml = html.replace(upperHatRecord, '');
 console.log('Removed upper catalog Dad Hat record; featured hat and other listings unchanged');
