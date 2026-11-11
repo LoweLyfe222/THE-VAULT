@@ -353,45 +353,77 @@
 })();
 
 
-// Catalog-only duplicate cleanup: remove the first (upper) of the two hat
-// product cards. Preserve the second (lower) card and the big bottom feature.
-// No document-wide mutation observers or product click interception.
+// Owner-approved hat navigation: the large featured hat and yellow CTA jump
+// to the existing small red hat catalog listing. No product data is changed.
 (() => {
-  const hatName=/make\s*gas\s*\$?\s*2[.]40\s*again\s*dad\s*hat/i;
-  function cards() {
-    const result=[];
-    for(const control of document.querySelectorAll('button,a,[role="button"]')) {
-      if(!/VIEW\s*DETAILS/i.test(control.textContent||''))continue;
-      let node=control.parentElement;
-      for(let i=0;node&&i<10;i++,node=node.parentElement){
-        const t=node.textContent||'';
-        if(t.length>2000)break;
-        const img=node.querySelector('img,[role="img"]');
-        if(!img)continue;
-        const photo=(img.getAttribute('src')||'')+' '+(img.getAttribute('alt')||'');
-        if(hatName.test(t)||/make-gas-(?:original|cap)\.png/i.test(photo)){
-          if(!result.includes(node))result.push(node);
+  const hatTitle = /Make Gas \$2\.40 Again Dad Hat/i;
+  const findSmallHatCard = () => {
+    const buttons = [...document.querySelectorAll('button,a,[role="button"]')];
+    for (const button of buttons) {
+      if (!/^VIEW DETAILS/i.test((button.textContent || '').trim())) continue;
+      let node = button.parentElement;
+      for (let i = 0; node && i < 7; i++, node = node.parentElement) {
+        const text = node.textContent || '';
+        if (hatTitle.test(text) && text.length < 800) return node;
+      }
+    }
+    return null;
+  };
+  const findFeaturedPanel = () => {
+    const cta = [...document.querySelectorAll('button,a,[role="button"]')]
+      .find(el => /VIEW THE \$2\.40 HAT/i.test(el.textContent || ''));
+    if (!cta) return null;
+    let node = cta.parentElement;
+    for (let i = 0; node && i < 6; i++, node = node.parentElement) {
+      const text = node.textContent || '';
+      if (hatTitle.test(text) && node.querySelector('img') && text.length < 1200) return node;
+    }
+    return cta.parentElement;
+  };
+  document.addEventListener('click', event => {
+    const featured = findFeaturedPanel();
+    if (!featured || !featured.contains(event.target)) return;
+    const cta = event.target.closest('button,a,[role="button"]');
+    const isCta = cta && /VIEW THE \$2\.40 HAT/i.test(cta.textContent || '');
+    const isHatImage = !!event.target.closest('img') &&
+      !!featured.querySelector('img') &&
+      (event.target.closest('img') === featured.querySelector('img'));
+    if (!isCta && !isHatImage) return;
+    const target = findSmallHatCard();
+    if (!target) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const details = [...target.querySelectorAll('button,a,[role="button"]')]
+      .find(el => /^VIEW DETAILS/i.test((el.textContent || '').trim()));
+    if (details) details.click();
+  }, true);
+})();
+
+
+// One-time, lightweight duplicate cleanup (no MutationObserver).
+// Preserve homepage/bottom featured hat panels and first catalog hat.
+(() => {
+  function dedupeHatCatalog() {
+    const cards = [];
+    for (const el of document.querySelectorAll('button,a,[role="button"]')) {
+      if (!/^VIEW DETAILS/i.test((el.textContent || '').trim())) continue;
+      let card = el.parentElement;
+      for (let depth=0; card && depth<7; depth++,card=card.parentElement) {
+        const t=card.textContent || '';
+        if (t.length < 850 && /Make Gas \$2\.40 Again Dad Hat/i.test(t) &&
+            /VIEW DETAILS/i.test(t)) {
+          if (!cards.includes(card)) cards.push(card);
           break;
         }
       }
     }
-    return result.sort((x,y)=>x.getBoundingClientRect().top+window.scrollY-y.getBoundingClientRect().top-window.scrollY);
-  }
-  function hideUpper() {
-    const matches=cards();
-    if(matches.length<2)return;
-    matches[0].style.setProperty('display','none','important');
-    matches[0].dataset.hiddenUpperHat='1';
-    for(const lower of matches.slice(1)){
-      if(lower.dataset.hiddenUpperHat==='1'){
-        lower.style.removeProperty('display');
-        delete lower.dataset.hiddenUpperHat;
-      }
+    if (cards.length > 1) {
+      for (const extra of cards.slice(1)) extra.style.display='none';
     }
   }
-  function run(){hideUpper();setTimeout(hideUpper,800);setTimeout(hideUpper,2200);setTimeout(hideUpper,5000);}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});
-  else run();
+  if (document.readyState==='loading') {
+    document.addEventListener('DOMContentLoaded',()=>setTimeout(dedupeHatCatalog,1200),{once:true});
+  } else setTimeout(dedupeHatCatalog,1200);
 })();
 
 
