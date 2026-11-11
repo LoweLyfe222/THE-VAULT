@@ -353,93 +353,43 @@
 })();
 
 
-// Owner-approved hat navigation: the large featured hat and yellow CTA jump
-// to the existing small red hat catalog listing. No product data is changed.
+// Catalog-only duplicate cleanup: remove the first (upper) of the two hat
+// product cards. Preserve the second (lower) card and the big bottom feature.
+// No document-wide mutation observers or product click interception.
 (() => {
-  const hatTitle = /Make Gas \$2\.40 Again Dad Hat/i;
-  const findSmallHatCard = () => {
-    const buttons = [...document.querySelectorAll('button,a,[role="button"]')];
-    for (const button of buttons) {
-      if (!/^VIEW DETAILS/i.test((button.textContent || '').trim())) continue;
-      let node = button.parentElement;
-      for (let i = 0; node && i < 7; i++, node = node.parentElement) {
-        const text = node.textContent || '';
-        if (hatTitle.test(text) && text.length < 800) return node;
-      }
-    }
-    return null;
-  };
-  const findFeaturedPanel = () => {
-    const cta = [...document.querySelectorAll('button,a,[role="button"]')]
-      .find(el => /VIEW THE \$2\.40 HAT/i.test(el.textContent || ''));
-    if (!cta) return null;
-    let node = cta.parentElement;
-    for (let i = 0; node && i < 6; i++, node = node.parentElement) {
-      const text = node.textContent || '';
-      if (hatTitle.test(text) && node.querySelector('img') && text.length < 1200) return node;
-    }
-    return cta.parentElement;
-  };
-  document.addEventListener('click', event => {
-    const featured = findFeaturedPanel();
-    if (!featured || !featured.contains(event.target)) return;
-    const cta = event.target.closest('button,a,[role="button"]');
-    const isCta = cta && /VIEW THE \$2\.40 HAT/i.test(cta.textContent || '');
-    const isHatImage = !!event.target.closest('img') &&
-      !!featured.querySelector('img') &&
-      (event.target.closest('img') === featured.querySelector('img'));
-    if (!isCta && !isHatImage) return;
-    const target = findSmallHatCard();
-    if (!target) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    const details = [...target.querySelectorAll('button,a,[role="button"]')]
-      .find(el => /^VIEW DETAILS/i.test((el.textContent || '').trim()));
-    if (details) details.click();
-  }, true);
-})();
-
-
-// Remove only the TOPMOST of TWO red dad-hat catalog cards.
-// Never remove the lower catalog card or the separate large bottom feature.
-// Runs only a few times; no observers or click interception.
-(() => {
-  function hatCards() {
-    const found=new Set();
-    for(const button of document.querySelectorAll('button,a,[role="button"]')) {
-      if(!/^VIEW DETAILS/i.test((button.textContent||'').trim()))continue;
-      let node=button.parentElement;
-      for(let depth=0;node&&depth<9;depth++,node=node.parentElement) {
+  const hatName=/make\s*gas\s*\$?\s*2[.]40\s*again\s*dad\s*hat/i;
+  function cards() {
+    const result=[];
+    for(const control of document.querySelectorAll('button,a,[role="button"]')) {
+      if(!/VIEW\s*DETAILS/i.test(control.textContent||''))continue;
+      let node=control.parentElement;
+      for(let i=0;node&&i<10;i++,node=node.parentElement){
         const t=node.textContent||'';
-        if(t.length>1600)break;
-        const img=node.querySelector('img');
-        const photo=(img?.getAttribute('src')||'')+' '+(img?.getAttribute('alt')||'');
-        const isHat=/make\s*gas\s*\$?\s*2[.]40\s*again\s*dad\s*hat/i.test(t) ||
-          /make-gas-(?:original|cap)\.png/i.test(photo);
-        if(isHat && img && /\$26\.99/.test(t)) {
-          found.add(node);
+        if(t.length>2000)break;
+        const img=node.querySelector('img,[role="img"]');
+        if(!img)continue;
+        const photo=(img.getAttribute('src')||'')+' '+(img.getAttribute('alt')||'');
+        if(hatName.test(t)||/make-gas-(?:original|cap)\.png/i.test(photo)){
+          if(!result.includes(node))result.push(node);
           break;
         }
       }
     }
-    return [...found].filter(el=>el.isConnected).sort((a,b)=>
-      a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1);
+    return result.sort((x,y)=>x.getBoundingClientRect().top+window.scrollY-y.getBoundingClientRect().top-window.scrollY);
   }
-  function removeOnlyUpperHat() {
-    const cards=hatCards();
-    if(cards.length<2)return;
-    // Hide exactly one, the earliest catalog card in document order.
-    cards[0].style.setProperty('display','none','important');
-    cards[0].dataset.removedUpperHat='true';
-    // Ensure any earlier attempts do not leave the lower hat hidden.
-    for(const card of cards.slice(1)) {
-      if(card.dataset.removedUpperHat==='true') {
-        card.style.removeProperty('display');
-        delete card.dataset.removedUpperHat;
+  function hideUpper() {
+    const matches=cards();
+    if(matches.length<2)return;
+    matches[0].style.setProperty('display','none','important');
+    matches[0].dataset.hiddenUpperHat='1';
+    for(const lower of matches.slice(1)){
+      if(lower.dataset.hiddenUpperHat==='1'){
+        lower.style.removeProperty('display');
+        delete lower.dataset.hiddenUpperHat;
       }
     }
   }
-  const run=()=>{removeOnlyUpperHat();setTimeout(removeOnlyUpperHat,1000);setTimeout(removeOnlyUpperHat,3000);};
+  function run(){hideUpper();setTimeout(hideUpper,800);setTimeout(hideUpper,2200);setTimeout(hideUpper,5000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});
   else run();
 })();
