@@ -69,6 +69,24 @@
   const scan=()=>document.querySelectorAll('img').forEach(img=>{
     if (img.complete && img.naturalWidth===0) repair(img);
   });
+
+  // Decode escaped Fourthwall rich-text descriptions as plain text, not executable HTML.
+  const tidyDescriptions = () => {
+    document.querySelectorAll('dialog, [role="dialog"]').forEach(dialog => {
+      dialog.querySelectorAll('p, div').forEach(el => {
+        if (el.children.length) return;
+        const raw=el.textContent || '';
+        if (!/^\\s*<p[ >]/i.test(raw) || !/<\\/p>/i.test(raw)) return;
+        const parsed=new DOMParser().parseFromString(raw,'text/html');
+        const lines=[...parsed.body.querySelectorAll('p')].map(p=>p.textContent.trim()).filter(Boolean);
+        if (lines.length) el.textContent=lines.join('\\n\\n');
+        el.style.whiteSpace='pre-line';
+      });
+    });
+  };
+  document.addEventListener('click',()=>setTimeout(tidyDescriptions,0),true);
+  document.addEventListener('DOMContentLoaded',tidyDescriptions,{once:true});
+
   document.addEventListener('DOMContentLoaded',scan,{once:true});
   scan();
 })();
