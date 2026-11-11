@@ -1,0 +1,19 @@
+name: Verify THE VAULT V053 website
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Assemble and verify original V053 website
+        run: node assemble-site.js
+      - name: Check generated HTML exists
+        run: |
+          test -s index.html
+          echo "V053 assembled successfully: $(wc -c < index.html) bytes"
