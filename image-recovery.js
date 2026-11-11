@@ -214,6 +214,63 @@
   document.addEventListener('DOMContentLoaded',missingPhotoRecovery,{once:true});
   document.addEventListener('click',()=>setTimeout(missingPhotoRecovery,120),true);
 
+
+  // The original V053 page already contains the APPROVED Signature Angel hoodie
+  // mockup as a data URI in its feature-gallery template. Reuse those exact bytes.
+  const originalArtwork = {};
+  const locateOriginalArtwork = () => {
+    if(!originalArtwork.angel) {
+      const gallery=document.querySelector('.vault-v009-main');
+      if(gallery?.src?.startsWith('data:image/'))originalArtwork.angel=gallery.src;
+      if(!originalArtwork.angel)for(const script of document.scripts){
+        const source=script.textContent||'';
+        const at=source.indexOf('class="vault-v009-main" src="data:image/');
+        if(at<0)continue;
+        const beginning=source.indexOf('src="',at)+5;
+        const end=source.indexOf('"',beginning);
+        if(end>beginning)originalArtwork.angel=source.slice(beginning,end);
+        break;
+      }
+    }
+    if(!originalArtwork.hat) {
+      const hat=document.querySelector('#vault-cap-detail img[src^="data:image/"]');
+      if(hat)originalArtwork.hat=hat.src;
+    }
+  };
+  const restoreOriginalPhotos=()=>{
+    locateOriginalArtwork();
+    const replacements=[
+      {title:'Signature Angel Heavyweight Hoodie',url:originalArtwork.angel,pattern:/74f7a5565d40943399281ec1/i},
+      {title:'Make Gas $2.40 Again Dad Hat',url:originalArtwork.hat,pattern:/make-gas-cap/i}
+    ];
+    for(const item of replacements){
+      if(!item.url)continue;
+      document.querySelectorAll('img').forEach(img=>{
+        if(item.pattern.test(img.getAttribute('src')||'') || item.pattern.test(img.alt||'')){
+          if(img.src!==item.url){img.onerror=null;img.src=item.url;}
+        }
+      });
+      document.querySelectorAll('[role="img"]').forEach(el=>{
+        if(!/PRODUCT PHOTO COMING SOON/i.test(el.textContent||''))return;
+        if(!sameName(el.textContent).includes(sameName(item.title)))return;
+        const img=document.createElement('img');
+        img.src=item.url;img.alt=item.title;
+        img.style.cssText='display:block;width:100%;height:auto;object-fit:contain';
+        el.replaceWith(img);
+      });
+    }
+  };
+  let originalPhotosPending=false;
+  const queueOriginalPhotos=()=>{
+    if(originalPhotosPending)return;
+    originalPhotosPending=true;
+    setTimeout(()=>{originalPhotosPending=false;restoreOriginalPhotos();},30);
+  };
+  new MutationObserver(queueOriginalPhotos).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',restoreOriginalPhotos,{once:true});
+  document.addEventListener('click',queueOriginalPhotos,true);
+  restoreOriginalPhotos();
+
   document.addEventListener('DOMContentLoaded',scan,{once:true});
   scan();
 })();
