@@ -146,6 +146,74 @@
   document.addEventListener('click',scheduleSync,true);
   document.addEventListener('DOMContentLoaded',scheduleSync,{once:true});
 
+
+  // Fix the actual four outstanding missing catalog photos, not unrelated products.
+  // The hat already has an authentic image embedded in its existing detail dialog.
+  const exactMissing = {
+    'imperial-meditation-saints-sinners-tee-red':'Saints & Sinners Tee — Red',
+    'imperial-meditation-royale-with-gold-tee-white':'Royale With Gold Tee — White',
+    '74f7a5565d40943399281ec1':'Signature Angel Heavyweight Hoodie'
+  };
+  const getRecords = data => {
+    const roots=[data?.products,data?.results,data?.items,data?.data?.products,data?.data?.results,data?.data?.items,data?.data,data];
+    for(const root of roots) {
+      if(Array.isArray(root))return root;
+      if(Array.isArray(root?.items))return root.items;
+      if(Array.isArray(root?.results))return root.results;
+    }
+    return [];
+  };
+  const sameName = v => String(v||'').toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]/g,'');
+  let publishedProducts;
+  const findPublishedPhoto = async title => {
+    if(!publishedProducts)publishedProducts=fetch('/.netlify/functions/fourthwall?fwpath=%2Fproducts&currency=USD')
+      .then(r=>r.ok?r.json():null).then(getRecords).catch(()=>[]);
+    const list=await publishedProducts;
+    const match=list.find(p=>sameName(p.name||p.title)===sameName(title) ||
+      sameName(p.name||p.title).endsWith(sameName(title)));
+    if(!match)return '';
+    let url=imageUrl(match);
+    if(!url && (match.slug||match.handle))url=await fetchImage(match.slug||match.handle);
+    return url;
+  };
+  const restoreHat = () => {
+    const original=document.querySelector('#vault-cap-detail img[src^="data:image/"]');
+    if(!original)return;
+    document.querySelectorAll('img').forEach(img=>{
+      if(/\/assets\/make-gas-cap\.png(?:\?|$)/.test(img.src)) {
+        img.onerror=null;
+        img.src=original.src;
+      }
+    });
+    document.querySelectorAll('[role="img"]').forEach(el=>{
+      if(!/PRODUCT PHOTO COMING SOON/i.test(el.textContent||'') ||
+        !/Make Gas \$2\.40 Again Dad Hat/i.test(el.textContent||''))return;
+      const img=document.createElement('img');
+      img.src=original.src;img.alt='Make Gas $2.40 Again Dad Hat';
+      img.style.cssText='display:block;width:100%;height:auto;object-fit:contain';
+      el.replaceWith(img);
+    });
+  };
+  const missingPhotoRecovery = async () => {
+    restoreHat();
+    const placeholders=[...document.querySelectorAll('[role="img"]')].filter(el=>
+      /PRODUCT PHOTO COMING SOON/i.test(el.textContent||''));
+    for(const el of placeholders){
+      const title=Object.values(exactMissing).find(t=>sameName(el.textContent).includes(sameName(t)));
+      if(!title || el.dataset.photoRecoveryAttempted)return;
+      el.dataset.photoRecoveryAttempted='1';
+      const photo=await findPublishedPhoto(title);
+      if(!photo || !el.isConnected)return;
+      const img=document.createElement('img');
+      img.alt=title;img.src=photo;
+      img.style.cssText='display:block;width:100%;height:auto;object-fit:contain';
+      img.onerror=()=>img.replaceWith(el);
+      el.replaceWith(img);
+    }
+  };
+  document.addEventListener('DOMContentLoaded',missingPhotoRecovery,{once:true});
+  document.addEventListener('click',()=>setTimeout(missingPhotoRecovery,120),true);
+
   document.addEventListener('DOMContentLoaded',scan,{once:true});
   scan();
 })();
