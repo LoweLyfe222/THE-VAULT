@@ -400,40 +400,30 @@
 })();
 
 
-// Hide the single small red dad-hat catalog card by its APPROVED IMAGE,
-// not by title text (which may be dynamically split across DOM nodes).
-// Only a small bounded scan; no MutationObserver or click interception.
+// One-time, lightweight duplicate cleanup (no MutationObserver).
+// Preserve homepage/bottom featured hat panels and first catalog hat.
 (() => {
-  function hideSmallHat() {
-    const imgs=document.querySelectorAll('img');
-    for(const img of imgs) {
-      const src=img.getAttribute('src')||'';
-      const alt=img.getAttribute('alt')||'';
-      if(!/make-gas-original\.png|make-gas-cap\.png|make gas.*2\.40.*hat/i.test(src+' '+alt))continue;
-      // A catalog tile has a VIEW DETAILS button and a price; featured panels
-      // and product-detail modals are deliberately excluded.
-      let node=img.parentElement;
-      for(let i=0;node&&i<9;i++,node=node.parentElement){
-        if(node.id==='vault-cap-detail'||node.matches('dialog,[role="dialog"]'))break;
-        const t=node.textContent||'';
-        if(t.length>1800)break;
-        const buttons=[...node.querySelectorAll('button,a')];
-        if(buttons.some(b=>/^\s*VIEW DETAILS/i.test(b.textContent||'')) &&
-           /\$26\.99/.test(t)) {
-          node.style.setProperty('display','none','important');
-          node.setAttribute('data-hidden-small-hat','yes');
+  function dedupeHatCatalog() {
+    const cards = [];
+    for (const el of document.querySelectorAll('button,a,[role="button"]')) {
+      if (!/^VIEW DETAILS/i.test((el.textContent || '').trim())) continue;
+      let card = el.parentElement;
+      for (let depth=0; card && depth<7; depth++,card=card.parentElement) {
+        const t=card.textContent || '';
+        if (t.length < 850 && /Make Gas \$2\.40 Again Dad Hat/i.test(t) &&
+            /VIEW DETAILS/i.test(t)) {
+          if (!cards.includes(card)) cards.push(card);
           break;
         }
       }
     }
+    if (cards.length > 1) {
+      for (const extra of cards.slice(1)) extra.style.display='none';
+    }
   }
-  const run=()=>{
-    hideSmallHat();
-    setTimeout(hideSmallHat,1200);
-    setTimeout(hideSmallHat,4000);
-  };
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});
-  else run();
+  if (document.readyState==='loading') {
+    document.addEventListener('DOMContentLoaded',()=>setTimeout(dedupeHatCatalog,1200),{once:true});
+  } else setTimeout(dedupeHatCatalog,1200);
 })();
 
 
