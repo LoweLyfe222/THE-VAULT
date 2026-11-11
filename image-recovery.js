@@ -398,38 +398,3 @@
     if (details) details.click();
   }, true);
 })();
-
-
-// Keep exactly one catalog tile for the Make Gas $2.40 Again Dad Hat.
-// Featured homepage and bottom hat panels are not catalog tiles and stay visible.
-(() => {
-  const title=/Make Gas \$2\.40 Again Dad Hat/i;
-  const hideExtraCatalogHats=()=>{
-    const cards=[];
-    for(const button of document.querySelectorAll('button,a,[role="button"]')){
-      if(!/^VIEW DETAILS\s*(?:→|›|$)/i.test((button.textContent||'').trim()))continue;
-      let node=button.parentElement;
-      for(let i=0;node&&i<7;i++,node=node.parentElement){
-        const content=node.textContent||'';
-        if(title.test(content)&&content.length<850&&
-          /VIEW DETAILS/i.test(content)){
-          if(!cards.includes(node))cards.push(node);
-          break;
-        }
-      }
-    }
-    if(cards.length<2)return;
-    for(const card of cards.slice(1)){
-      card.style.setProperty('display','none','important');
-      card.setAttribute('data-hidden-extra-hat-catalog','true');
-    }
-  };
-  let queued=false;
-  new MutationObserver(()=>{
-    if(queued)return;
-    queued=true;
-    setTimeout(()=>{queued=false;hideExtraCatalogHats()},100);
-  }).observe(document.documentElement,{subtree:true,childList:true});
-  document.addEventListener('DOMContentLoaded',hideExtraCatalogHats,{once:true});
-  hideExtraCatalogHats();
-})();
