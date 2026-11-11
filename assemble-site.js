@@ -32,7 +32,12 @@ fs.mkdirSync(assetsDir,{recursive:true});
 fs.writeFileSync(path.join(assetsDir,'signature-angel-original.webp'),Buffer.from(angel[1].split(',')[1],'base64'));
 fs.writeFileSync(path.join(assetsDir,'make-gas-original.png'),Buffer.from(hat[1].split(',')[1],'base64'));
 console.log('Original product images extracted into real /assets/ files');
-const restored = html
+// Remove only the exact upper duplicate Dad Hat entry from the original catalog array.
+const upperHatRecord = ",\\n {\"name\": \"Make Gas $2.40 Again Dad Hat\", \"brand\": null, \"category\": \"extras\", \"price\": 26.99, \"image\": \"https://warm-medovik-b368bb.netlify.app/assets/make-gas-cap.png\", \"cap\": true}";
+if (html.split(upperHatRecord).length !== 2) throw new Error('Upper hat entry mismatch; refusing unsafe build');
+const catalogHtml = html.replace(upperHatRecord, '');
+console.log('Removed upper catalog Dad Hat record; featured hat and other listings unchanged');
+const restored = catalogHtml
   .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/74f7a5565d40943399281ec1.webp', '/assets/signature-angel-original.webp')
   .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/make-gas-cap.png', '/assets/make-gas-original.png');
 if (restored.includes('https://warm-medovik-b368bb.netlify.app/assets/74f7a5565d40943399281ec1.webp') || restored.includes('https://warm-medovik-b368bb.netlify.app/assets/make-gas-cap.png')) throw new Error('Unreplaced missing product photo URL');
