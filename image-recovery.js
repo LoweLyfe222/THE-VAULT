@@ -316,3 +316,38 @@
   document.addEventListener('DOMContentLoaded',scan,{once:true});
   scan();
 })();
+
+
+// Hide ONLY the duplicate Signature Angel catalog tile with the missing-photo
+// placeholder. Keep the approved featured hoodie/gallery and its checkout intact.
+(() => {
+  const removeDuplicateAngelTile = () => {
+    const placeholders = [...document.querySelectorAll('[role="img"],div,span')]
+      .filter(el => el.children.length < 4 &&
+        /PRODUCT PHOTO COMING SOON/i.test(el.textContent || '') &&
+        /Signature Angel Heavyweight Hoodie/i.test(el.textContent || ''));
+    for (const placeholder of placeholders) {
+      let card = placeholder;
+      for (let i = 0; i < 7 && card; i++, card = card.parentElement) {
+        const content = card.textContent || '';
+        if (/Signature Angel Heavyweight Hoodie/i.test(content) &&
+            /VIEW DETAILS/i.test(content) &&
+            /69\\.99/.test(content) &&
+            content.length < 1100) {
+          card.style.setProperty('display', 'none', 'important');
+          card.setAttribute('data-hidden-duplicate-angel', 'true');
+          break;
+        }
+      }
+    }
+  };
+  let pending = false;
+  const queue = () => {
+    if (pending) return;
+    pending = true;
+    setTimeout(() => { pending = false; removeDuplicateAngelTile(); }, 80);
+  };
+  new MutationObserver(queue).observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener('DOMContentLoaded',removeDuplicateAngelTile,{once:true});
+  removeDuplicateAngelTile();
+})();
