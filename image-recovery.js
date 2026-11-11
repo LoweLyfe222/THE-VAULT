@@ -400,27 +400,34 @@
 })();
 
 
-// Owner correction: hide the small red hat tile in the product grid ONLY.
-// Preserve the large featured/bottom hat, its details and the existing cart.
+// Hide the duplicate SMALL hat catalog tile only. Never hide the bottom feature.
 (() => {
-  function hideSmallHatCatalogCard() {
-    for (const el of document.querySelectorAll('button,a,[role="button"]')) {
-      if (!/^VIEW DETAILS/i.test((el.textContent || '').trim())) continue;
-      let card = el.parentElement;
-      for (let depth=0; card && depth<7; depth++,card=card.parentElement) {
-        const t=card.textContent || '';
-        if (t.length < 850 && /Make Gas \$2\.40 Again Dad Hat/i.test(t) &&
-            /VIEW DETAILS/i.test(t)) {
-          card.style.setProperty('display','none','important');
-          card.setAttribute('data-hidden-duplicate-hat','true');
+  const isHat = t => /Make Gas\s*\$2\.40\s*Again\s*Dad Hat/i.test(t || '');
+  function hideCatalogHat() {
+    // Product tiles contain a VIEW DETAILS control; the large featured hat does not.
+    const buttons = document.querySelectorAll('button,a,[role="button"]');
+    for (const button of buttons) {
+      if (!/^\s*VIEW DETAILS\s*(?:→|›|$)/i.test(button.textContent || '')) continue;
+      let node=button.parentElement;
+      for (let depth=0; node && depth<9; depth++,node=node.parentElement) {
+        const text=node.textContent || '';
+        if (isHat(text) && text.length<1400 && node.querySelector('img,[role="img"]')) {
+          node.style.setProperty('display','none','important');
+          node.dataset.hiddenDuplicateHat='true';
           break;
         }
       }
     }
   }
-  if (document.readyState==='loading') {
-    document.addEventListener('DOMContentLoaded',()=>setTimeout(hideSmallHatCatalogCard,150),{once:true});
-  } else setTimeout(hideSmallHatCatalogCard,150);
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',hideCatalogHat,{once:true});
+  else hideCatalogHat();
+  // Catalog may render after page load. Observe additions, not attributes, to avoid loops.
+  let queued=false;
+  new MutationObserver(() => {
+    if(queued)return;
+    queued=true;
+    requestAnimationFrame(()=>{queued=false;hideCatalogHat();});
+  }).observe(document.body || document.documentElement,{childList:true,subtree:true});
 })();
 
 
