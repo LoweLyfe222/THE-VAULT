@@ -393,6 +393,8 @@
     if (!target) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    target.scrollIntoView({behavior:'smooth',block:'center'});
+    const details = [...target.querySelectorAll('button,a,[role="button"]')]
+      .find(el => /^VIEW DETAILS/i.test((el.textContent || '').trim()));
+    if (details) details.click();
   }, true);
 })();
