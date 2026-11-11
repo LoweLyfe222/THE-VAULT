@@ -44,6 +44,11 @@ if (restored.includes('https://warm-medovik-b368bb.netlify.app/assets/74f7a5565d
 const repaired = restored
   .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/imperial-royal-dynasty.avif', '/assets/imperial-royal-dynasty.jpg')
   .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/imperial-bad-boys.avif', '/assets/imperial-bad-boys.jpg');
-fs.writeFileSync(output, repaired.replace('</body>', '<script defer src="/image-recovery.js"></script></body>'));
+ // Remove the one hardcoded, non-working duplicate hat catalog entry.
+ // The separate bottom featured hat and live catalog listings remain untouched.
+const duplicateUpperHat = ', {"name": "Make Gas $2.40 Again Dad Hat", "brand": null, "category": "extras", "price": 26.99, "image": "https://warm-medovik-b368bb.netlify.app/assets/make-gas-cap.png", "cap": true}';
+if (repaired.split(duplicateUpperHat).length !== 2) throw new Error('Expected exactly one hardcoded upper hat entry');
+const catalogCorrected = repaired.replace(duplicateUpperHat, '');
+fs.writeFileSync(output, catalogCorrected.replace('</body>', '<script defer src="/image-recovery.js"></script></body>'));
 if (!fs.existsSync(path.join(assetsDir,'signature-angel-original.webp')) || !fs.existsSync(path.join(assetsDir,'make-gas-original.png'))) throw new Error('Original image files were not created');
 console.log('V053 image fallback enabled; product catalog and checkout unchanged');
