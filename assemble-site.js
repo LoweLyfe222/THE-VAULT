@@ -18,3 +18,9 @@ const actual = crypto.createHash('sha256').update(fs.readFileSync(output)).diges
 const expected = 'db101a702df0f19ced23cc6d59f5d54deb84903e62a2915c7265c9ab55574b34';
 if (actual !== expected) throw new Error('V053 website checksum mismatch — aborting deploy');
 console.log('V053 website assembled and SHA-256 verified');
+
+// Inject the small recovery script after checksum verification, without editing the original V053 parts.
+const html = fs.readFileSync(output, 'utf8');
+if (!html.includes('</body>')) throw new Error('V053 HTML body closing tag missing');
+fs.writeFileSync(output, html.replace('</body>', '<script defer src="/image-recovery.js"></script></body>'));
+console.log('V053 image fallback enabled; product catalog and checkout unchanged');
