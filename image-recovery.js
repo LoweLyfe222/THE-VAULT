@@ -409,7 +409,7 @@
       let card = el.parentElement;
       for (let depth=0; card && depth<7; depth++,card=card.parentElement) {
         const t=card.textContent || '';
-        if (t.length < 850 && /Make Gas \\$2\\.40 Again Dad Hat/i.test(t) &&
+        if (t.length < 850 && /Make Gas \$2\.40 Again Dad Hat/i.test(t) &&
             /VIEW DETAILS/i.test(t)) {
           card.style.setProperty('display','none','important');
           card.setAttribute('data-hidden-duplicate-hat','true');
