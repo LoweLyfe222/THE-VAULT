@@ -41,7 +41,12 @@ const restored = catalogHtml
   .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/74f7a5565d40943399281ec1.webp', '/assets/signature-angel-original.webp')
   .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/make-gas-cap.png', '/assets/make-gas-original.png');
 if (restored.includes('https://warm-medovik-b368bb.netlify.app/assets/74f7a5565d40943399281ec1.webp') || restored.includes('https://warm-medovik-b368bb.netlify.app/assets/make-gas-cap.png')) throw new Error('Unreplaced missing product photo URL');
-const repaired = restored
+// Remove the single duplicate hat entry from the legacy liveCatalog array.
+// The separate lower catalog listing and bottom featured hat remain untouched.
+const legacyHatEntry = ' {"name": "Make Gas $2.40 Again Dad Hat", "brand": null, "category": "extras", "price": 26.99, "image": "https://warm-medovik-b368bb.netlify.app/assets/make-gas-cap.png", "cap": true}';
+if (!restored.includes(legacyHatEntry)) throw new Error('Legacy top hat catalog entry not found — refusing to modify unrelated products');
+const catalogWithoutUpperHat = restored.replace(legacyHatEntry, '');
+const repaired = catalogWithoutUpperHat
   .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/imperial-royal-dynasty.avif', '/assets/imperial-royal-dynasty.jpg')
   .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/imperial-bad-boys.avif', '/assets/imperial-bad-boys.jpg');
 fs.writeFileSync(output, repaired.replace('</body>', '<script defer src="/image-recovery.js"></script></body>'));
