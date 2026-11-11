@@ -271,6 +271,48 @@
   document.addEventListener('click',queueOriginalPhotos,true);
   restoreOriginalPhotos();
 
+
+  // Authoritative fix for the two original, approved product assets.
+  // Apply directly to both product cards and detail dialogs, including already
+  // replaced placeholders; do not depend on Fourthwall API or failed-image timing.
+  const approvedPhotoPaths = [
+    ['Signature Angel Heavyweight Hoodie','/assets/signature-angel-original.webp'],
+    ['Make Gas $2.40 Again Dad Hat','/assets/make-gas-original.png']
+  ];
+  const approvedKey = x => String(x||'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  const approvedPhotoRepair = () => {
+    for(const [title,path] of approvedPhotoPaths) {
+      const key=approvedKey(title);
+      const nodes=document.querySelectorAll('[role="img"],img');
+      for(const node of nodes){
+        const isPlaceholder=node.getAttribute('role')==='img' &&
+          /PRODUCT PHOTO COMING SOON/i.test(node.textContent||'');
+        const alt=node.getAttribute('alt')||node.getAttribute('aria-label')||'';
+        const matches=approvedKey(alt).includes(key) ||
+          (isPlaceholder && approvedKey(node.textContent).includes(key));
+        if(!matches)continue;
+        if(node.tagName==='IMG') {
+          if(!node.src.endsWith(path)){node.onerror=null;node.src=path;}
+        } else if(isPlaceholder) {
+          const img=document.createElement('img');
+          img.src=path;img.alt=title;
+          img.style.cssText='display:block;width:100%;height:auto;object-fit:contain';
+          node.replaceWith(img);
+        }
+      }
+    }
+  };
+  let approvedRepairQueued=false;
+  const queueApprovedRepair=()=>{
+    if(approvedRepairQueued)return;
+    approvedRepairQueued=true;
+    setTimeout(()=>{approvedRepairQueued=false;approvedPhotoRepair();},50);
+  };
+  new MutationObserver(queueApprovedRepair).observe(document.documentElement,{subtree:true,childList:true});
+  document.addEventListener('DOMContentLoaded',approvedPhotoRepair,{once:true});
+  document.addEventListener('click',queueApprovedRepair,true);
+  approvedPhotoRepair();
+
   document.addEventListener('DOMContentLoaded',scan,{once:true});
   scan();
 })();
