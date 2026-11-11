@@ -101,6 +101,51 @@
   document.addEventListener('click',()=>setTimeout(tidyDescriptions,0),true);
   document.addEventListener('DOMContentLoaded',tidyDescriptions,{once:true});
 
+
+  // Product detail image synchronization: use the exact corresponding catalog card image
+  // whenever a detail modal has a missing or failed image. Never substitute other artwork.
+  const normalizeTitle = value => (value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const productCards = () => [...document.querySelectorAll('#productGrid > *, .product-card, [class*="product-card"], [class*="vault-product"]')]
+    .filter(el => el.querySelector('img') && el.querySelector('h2,h3,h4'));
+  const syncDetails = () => {
+    const cards = productCards();
+    document.querySelectorAll('dialog, [role="dialog"], [class*="modal"]').forEach(modal => {
+      if (modal.offsetWidth === 0 || modal.offsetHeight === 0) return;
+      const heading = modal.querySelector('h1,h2,h3');
+      if (!heading) return;
+      const title = normalizeTitle(heading.textContent);
+      if (!title) return;
+      const card = cards.find(el => {
+        const h=el.querySelector('h2,h3,h4');
+        return h && normalizeTitle(h.textContent) === title;
+      });
+      if (!card) return;
+      const source = card.querySelector('img');
+      if (!source || !source.complete || !source.naturalWidth) return;
+      const src = source.currentSrc || source.src;
+      if (!src) return;
+      const broken = [...modal.querySelectorAll('img')].filter(img => img.complete && !img.naturalWidth);
+      broken.forEach(img => { img.onerror=null; img.src=src; });
+      modal.querySelectorAll('[role="img"]').forEach(el => {
+        if (!/PRODUCT PHOTO COMING SOON/i.test(el.textContent || '')) return;
+        const img=document.createElement('img');
+        img.alt=heading.textContent.trim();
+        img.src=src;
+        img.style.cssText='display:block;width:100%;height:auto;max-height:70vh;object-fit:contain';
+        el.replaceWith(img);
+      });
+    });
+  };
+  let syncPending=false;
+  const scheduleSync=()=>{
+    if(syncPending)return;
+    syncPending=true;
+    setTimeout(()=>{syncPending=false;syncDetails();},80);
+  };
+  new MutationObserver(scheduleSync).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['src','open','class','style']});
+  document.addEventListener('click',scheduleSync,true);
+  document.addEventListener('DOMContentLoaded',scheduleSync,{once:true});
+
   document.addEventListener('DOMContentLoaded',scan,{once:true});
   scan();
 })();
