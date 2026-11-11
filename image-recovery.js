@@ -400,38 +400,40 @@
 })();
 
 
-// Owner request: remove the red dad hat TILE in the left/top catalog column.
-// Do not change featured/bottom hats, detail dialogs, or product click handlers.
+// Hide the single small red dad-hat catalog card by its APPROVED IMAGE,
+// not by title text (which may be dynamically split across DOM nodes).
+// Only a small bounded scan; no MutationObserver or click interception.
 (() => {
-  const hat=/make\s*gas\s*\$?\s*2[.]40\s*again\s*dad\s*hat/i;
-  function hideTile() {
-    // Prefer catalog containers; never search the whole page for a featured panel.
-    const roots=[...document.querySelectorAll('#productGrid,[id*="product-grid"],[class*="product-grid"],[class*="productGrid"],[id*="catalog"],[class*="catalog"]')];
-    const scanRoots=roots.length?roots:[document.body];
-    for(const root of scanRoots) {
-      const controls=root.querySelectorAll('button,a,[role="button"]');
-      for(const control of controls) {
-        if(!/VIEW DETAILS/i.test((control.textContent||'').trim()))continue;
-        let el=control.parentElement;
-        for(let depth=0;el&&el!==root&&depth<10;depth++,el=el.parentElement){
-          const t=el.textContent||'';
-          if(t.length>1600)break;
-          if(hat.test(t)&&el.querySelector('img,[role="img"]')) {
-            el.style.setProperty('display','none','important');
-            el.setAttribute('data-vault-hidden-hat-tile','1');
-            break;
-          }
+  function hideSmallHat() {
+    const imgs=document.querySelectorAll('img');
+    for(const img of imgs) {
+      const src=img.getAttribute('src')||'';
+      const alt=img.getAttribute('alt')||'';
+      if(!/make-gas-original\.png|make-gas-cap\.png|make gas.*2\.40.*hat/i.test(src+' '+alt))continue;
+      // A catalog tile has a VIEW DETAILS button and a price; featured panels
+      // and product-detail modals are deliberately excluded.
+      let node=img.parentElement;
+      for(let i=0;node&&i<9;i++,node=node.parentElement){
+        if(node.id==='vault-cap-detail'||node.matches('dialog,[role="dialog"]'))break;
+        const t=node.textContent||'';
+        if(t.length>1800)break;
+        const buttons=[...node.querySelectorAll('button,a')];
+        if(buttons.some(b=>/^\s*VIEW DETAILS/i.test(b.textContent||'')) &&
+           /\$26\.99/.test(t)) {
+          node.style.setProperty('display','none','important');
+          node.setAttribute('data-hidden-small-hat','yes');
+          break;
         }
       }
     }
   }
-  const start=()=>{
-    hideTile();
-    // Small fixed number of checks for asynchronous catalog rendering, no observers.
-    [500,1500,3500,6500].forEach(ms=>setTimeout(hideTile,ms));
+  const run=()=>{
+    hideSmallHat();
+    setTimeout(hideSmallHat,1200);
+    setTimeout(hideSmallHat,4000);
   };
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
-  else start();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});
+  else run();
 })();
 
 
