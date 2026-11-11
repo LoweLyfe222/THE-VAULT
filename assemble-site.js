@@ -24,8 +24,8 @@ const html = fs.readFileSync(output, 'utf8');
 if (!html.includes('</body>')) throw new Error('V053 HTML body closing tag missing');
 // Restore the two exact product photos already embedded in the approved V053 HTML.
 // Patch the source image URLs BEFORE the browser builds product cards or detail modals.
-const angel = html.match(/class="vault-v009-main"\\s+src="(data:image\\/webp;base64,[^"]+)"/);
-const hat = html.match(/id="vault-cap-detail"[\\s\\S]{0,600}?<img\\s+src="(data:image\\/(?:png|webp|jpeg);base64,[^"]+)"/);
+const angel = html.match(/class="vault-v009-main"\s+src="(data:image\/webp;base64,[^"]+)"/);
+const hat = html.match(/id="vault-cap-detail"[\s\S]{0,600}?<img\s+src="(data:image\/(?:png|webp|jpeg);base64,[^"]+)"/);
 if (!angel || !hat) throw new Error('Original Angel or Dad Hat artwork missing; refusing to deploy placeholders');
 console.log('Restoring original approved photos to product card and detail URLs');
 const restored = html
