@@ -400,28 +400,46 @@
 })();
 
 
-// Owner-specified exact duplicate: remove ONLY the FIRST hat tile in the
-// product grid (left column near top). Keep the SECOND hat tile near bottom.
+// Remove only the TOPMOST of TWO red dad-hat catalog cards.
+// Never remove the lower catalog card or the separate large bottom feature.
+// Runs only a few times; no observers or click interception.
 (() => {
-  function removeFirstHatOnly() {
-    const cards=[];
-    for(const button of document.querySelectorAll('button,a,[role="button"]')){
+  function hatCards() {
+    const found=new Set();
+    for(const button of document.querySelectorAll('button,a,[role="button"]')) {
       if(!/^VIEW DETAILS/i.test((button.textContent||'').trim()))continue;
-      let card=button.parentElement;
-      for(let depth=0;card&&depth<7;depth++,card=card.parentElement){
-        const t=card.textContent||'';
-        if(t.length<900 && /Make Gas\s*\$2\.40\s*Again\s*Dad Hat/i.test(t) &&
-           card.querySelector('img,[role="img"]')) {
-          if(!cards.includes(card))cards.push(card);
+      let node=button.parentElement;
+      for(let depth=0;node&&depth<9;depth++,node=node.parentElement) {
+        const t=node.textContent||'';
+        if(t.length>1600)break;
+        const img=node.querySelector('img');
+        const photo=(img?.getAttribute('src')||'')+' '+(img?.getAttribute('alt')||'');
+        const isHat=/make\s*gas\s*\$?\s*2[.]40\s*again\s*dad\s*hat/i.test(t) ||
+          /make-gas-(?:original|cap)\.png/i.test(photo);
+        if(isHat && img && /\$26\.99/.test(t)) {
+          found.add(node);
           break;
         }
       }
     }
-    // Never hide the only matching hat. This prevents the previous
-    // accidental removal of all catalog hats.
-    if(cards.length>=2)cards[0].style.setProperty('display','none','important');
+    return [...found].filter(el=>el.isConnected).sort((a,b)=>
+      a.compareDocumentPosition(b)&Node.DOCUMENT_POSITION_FOLLOWING?-1:1);
   }
-  const run=()=>{removeFirstHatOnly();setTimeout(removeFirstHatOnly,1300);};
+  function removeOnlyUpperHat() {
+    const cards=hatCards();
+    if(cards.length<2)return;
+    // Hide exactly one, the earliest catalog card in document order.
+    cards[0].style.setProperty('display','none','important');
+    cards[0].dataset.removedUpperHat='true';
+    // Ensure any earlier attempts do not leave the lower hat hidden.
+    for(const card of cards.slice(1)) {
+      if(card.dataset.removedUpperHat==='true') {
+        card.style.removeProperty('display');
+        delete card.dataset.removedUpperHat;
+      }
+    }
+  }
+  const run=()=>{removeOnlyUpperHat();setTimeout(removeOnlyUpperHat,1000);setTimeout(removeOnlyUpperHat,3000);};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});
   else run();
 })();
