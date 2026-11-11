@@ -425,3 +425,85 @@
     document.addEventListener('DOMContentLoaded',()=>setTimeout(dedupeHatCatalog,1200),{once:true});
   } else setTimeout(dedupeHatCatalog,1200);
 })();
+
+
+// Mobile cart-only layout repair. No changes to cart data or checkout behavior.
+(() => {
+  const css = `
+  @media(max-width:700px) {
+    .vault-mobile-cart-repaired {
+      box-sizing:border-box!important;
+      width:calc(100vw - 28px)!important;
+      max-width:calc(100vw - 28px)!important;
+      max-height:calc(100dvh - 36px)!important;
+      overflow-x:hidden!important;
+      overflow-y:auto!important;
+      padding:18px 14px!important;
+    }
+    .vault-mobile-cart-repaired, .vault-mobile-cart-repaired * {
+      box-sizing:border-box!important;
+      min-width:0!important;
+      overflow-wrap:break-word!important;
+      word-break:normal!important;
+    }
+    .vault-mobile-cart-repaired .vault-mobile-cart-item {
+      display:flex!important;
+      flex-direction:column!important;
+      align-items:stretch!important;
+      gap:12px!important;
+      width:100%!important;
+      max-width:100%!important;
+      overflow:visible!important;
+    }
+    .vault-mobile-cart-repaired .vault-mobile-cart-item > * {
+      width:100%!important;
+      max-width:100%!important;
+      min-width:0!important;
+      flex:0 1 auto!important;
+    }
+    .vault-mobile-cart-repaired .vault-mobile-cart-item img,
+    .vault-mobile-cart-repaired .vault-mobile-cart-item [role="img"] {
+      display:block!important;
+      width:100%!important;
+      max-width:100%!important;
+      height:auto!important;
+      max-height:170px!important;
+      object-fit:contain!important;
+    }
+    .vault-mobile-cart-repaired .vault-mobile-cart-item [role="img"] {
+      overflow:hidden!important;
+      font-size:13px!important;
+    }
+  }`;
+  const style=document.createElement('style');
+  style.textContent=css;
+  document.head.appendChild(style);
+  function repairCart() {
+    if (window.innerWidth>700) return;
+    const heading=[...document.querySelectorAll('h1,h2,h3,h4,[role="heading"]')]
+      .find(el=>/THE VAULT\\s*[·•-]\\s*YOUR CART/i.test(el.textContent||''));
+    if(!heading)return;
+    let modal=heading.parentElement;
+    for(let i=0;modal&&i<7;i++,modal=modal.parentElement){
+      if(modal.querySelector('[role="img"],img') && /REMOVE/i.test(modal.textContent||''))break;
+    }
+    if(!modal)return;
+    modal.classList.add('vault-mobile-cart-repaired');
+    for(const remove of modal.querySelectorAll('button,a')) {
+      if(!/^REMOVE$/i.test((remove.textContent||'').trim()))continue;
+      let row=remove.parentElement;
+      for(let i=0;row&&i<7;i++,row=row.parentElement){
+        if(row===modal)break;
+        const hasImage=!!row.querySelector('img,[role="img"]');
+        const hasPrice=/\\$[0-9]/.test(row.textContent||'');
+        if(hasImage&&hasPrice) {
+          row.classList.add('vault-mobile-cart-item');
+          break;
+        }
+      }
+    }
+  }
+  document.addEventListener('click',()=>setTimeout(repairCart,100),true);
+  document.addEventListener('DOMContentLoaded',repairCart,{once:true});
+  repairCart();
+})();
