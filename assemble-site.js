@@ -1,7 +1,20 @@
+// Rebuild the original V053 website from small GitHub-uploadable UTF-8 parts.
 const fs = require('fs');
 const path = require('path');
-const dir = __dirname;
-const parts = ['index.part1.txt', 'index.part2.txt'];
-for (const part of parts) if (!fs.existsSync(path.join(dir,part))) throw new Error('Missing '+part+' — upload both website parts before deploying');
-const output = fs.createWriteStream(path.join(dir,'index.html'));
-(async()=>{for (const part of parts){await new Promise((resolve,reject)=>{const input=fs.createReadStream(path.join(dir,part));input.on('error',reject);input.on('end',resolve);input.pipe(output,{end:false});});}output.end();})().catch(e=>{console.error(e);process.exitCode=1;});
+const crypto = require('crypto');
+const root = __dirname;
+const parts = Array.from({length: 12}, (_, i) => 'index.part' + String(i + 1).padStart(2, '0') + '.txt');
+for (const part of parts) {
+  if (!fs.existsSync(path.join(root, part))) throw new Error('Missing '+part+' — upload all 12 V053 website parts');
+}
+const output = path.join(root, 'index.html');
+const fd = fs.openSync(output, 'w');
+try {
+  for (const part of parts) fs.writeSync(fd, fs.readFileSync(path.join(root, part)));
+} finally {
+  fs.closeSync(fd);
+}
+const actual = crypto.createHash('sha256').update(fs.readFileSync(output)).digest('hex');
+const expected = 'db101a702df0f19ced23cc6d59f5d54deb84903e62a2915c7265c9ab55574b34';
+if (actual !== expected) throw new Error('V053 website checksum mismatch — aborting deploy');
+console.log('V053 website assembled and SHA-256 verified');
