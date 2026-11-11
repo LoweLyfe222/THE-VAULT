@@ -351,3 +351,48 @@
   document.addEventListener('DOMContentLoaded',removeDuplicateAngelTile,{once:true});
   removeDuplicateAngelTile();
 })();
+
+
+// Owner-approved hat navigation: the large featured hat and yellow CTA jump
+// to the existing small red hat catalog listing. No product data is changed.
+(() => {
+  const hatTitle = /Make Gas \$2\.40 Again Dad Hat/i;
+  const findSmallHatCard = () => {
+    const buttons = [...document.querySelectorAll('button,a,[role="button"]')];
+    for (const button of buttons) {
+      if (!/^VIEW DETAILS/i.test((button.textContent || '').trim())) continue;
+      let node = button.parentElement;
+      for (let i = 0; node && i < 7; i++, node = node.parentElement) {
+        const text = node.textContent || '';
+        if (hatTitle.test(text) && text.length < 800) return node;
+      }
+    }
+    return null;
+  };
+  const findFeaturedPanel = () => {
+    const cta = [...document.querySelectorAll('button,a,[role="button"]')]
+      .find(el => /VIEW THE \$2\.40 HAT/i.test(el.textContent || ''));
+    if (!cta) return null;
+    let node = cta.parentElement;
+    for (let i = 0; node && i < 6; i++, node = node.parentElement) {
+      const text = node.textContent || '';
+      if (hatTitle.test(text) && node.querySelector('img') && text.length < 1200) return node;
+    }
+    return cta.parentElement;
+  };
+  document.addEventListener('click', event => {
+    const featured = findFeaturedPanel();
+    if (!featured || !featured.contains(event.target)) return;
+    const cta = event.target.closest('button,a,[role="button"]');
+    const isCta = cta && /VIEW THE \$2\.40 HAT/i.test(cta.textContent || '');
+    const isHatImage = !!event.target.closest('img') &&
+      !!featured.querySelector('img') &&
+      (event.target.closest('img') === featured.querySelector('img'));
+    if (!isCta && !isHatImage) return;
+    const target = findSmallHatCard();
+    if (!target) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    target.scrollIntoView({behavior:'smooth',block:'center'});
+  }, true);
+})();
