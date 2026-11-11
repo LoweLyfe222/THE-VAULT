@@ -76,10 +76,10 @@
       dialog.querySelectorAll('p, div').forEach(el => {
         if (el.children.length) return;
         const raw=el.textContent || '';
-        if (!/^\\s*<p[ >]/i.test(raw) || !/<\\/p>/i.test(raw)) return;
+        if (!/^\s*<p[ >]/i.test(raw) || !/<\/p>/i.test(raw)) return;
         const parsed=new DOMParser().parseFromString(raw,'text/html');
         const lines=[...parsed.body.querySelectorAll('p')].map(p=>p.textContent.trim()).filter(Boolean);
-        if (lines.length) el.textContent=lines.join('\\n\\n');
+        if (lines.length) el.textContent=lines.join('\n\n');
         el.style.whiteSpace='pre-line';
       });
     });
