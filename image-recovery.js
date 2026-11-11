@@ -400,30 +400,30 @@
 })();
 
 
-// One-time, lightweight duplicate cleanup (no MutationObserver).
-// Preserve homepage/bottom featured hat panels and first catalog hat.
+// Owner-specified exact duplicate: remove ONLY the FIRST hat tile in the
+// product grid (left column near top). Keep the SECOND hat tile near bottom.
 (() => {
-  function dedupeHatCatalog() {
-    const cards = [];
-    for (const el of document.querySelectorAll('button,a,[role="button"]')) {
-      if (!/^VIEW DETAILS/i.test((el.textContent || '').trim())) continue;
-      let card = el.parentElement;
-      for (let depth=0; card && depth<7; depth++,card=card.parentElement) {
-        const t=card.textContent || '';
-        if (t.length < 850 && /Make Gas \$2\.40 Again Dad Hat/i.test(t) &&
-            /VIEW DETAILS/i.test(t)) {
-          if (!cards.includes(card)) cards.push(card);
+  function removeFirstHatOnly() {
+    const cards=[];
+    for(const button of document.querySelectorAll('button,a,[role="button"]')){
+      if(!/^VIEW DETAILS/i.test((button.textContent||'').trim()))continue;
+      let card=button.parentElement;
+      for(let depth=0;card&&depth<7;depth++,card=card.parentElement){
+        const t=card.textContent||'';
+        if(t.length<900 && /Make Gas\s*\$2\.40\s*Again\s*Dad Hat/i.test(t) &&
+           card.querySelector('img,[role="img"]')) {
+          if(!cards.includes(card))cards.push(card);
           break;
         }
       }
     }
-    if (cards.length > 1) {
-      for (const extra of cards.slice(1)) extra.style.display='none';
-    }
+    // Never hide the only matching hat. This prevents the previous
+    // accidental removal of all catalog hats.
+    if(cards.length>=2)cards[0].style.setProperty('display','none','important');
   }
-  if (document.readyState==='loading') {
-    document.addEventListener('DOMContentLoaded',()=>setTimeout(dedupeHatCatalog,1200),{once:true});
-  } else setTimeout(dedupeHatCatalog,1200);
+  const run=()=>{removeFirstHatOnly();setTimeout(removeFirstHatOnly,1300);};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});
+  else run();
 })();
 
 
