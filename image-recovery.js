@@ -400,28 +400,38 @@
 })();
 
 
-// Remove only the owner's circled small hat tile from the product columns.
-// Bounded checks only; no observers, no event interception, no cart changes.
+// Owner request: remove the red dad hat TILE in the left/top catalog column.
+// Do not change featured/bottom hats, detail dialogs, or product click handlers.
 (() => {
-  function removeSmallHatTile() {
-    const buttons=document.querySelectorAll('button,a,[role="button"]');
-    for (const button of buttons) {
-      if (!/^VIEW DETAILS/i.test((button.textContent||'').trim())) continue;
-      let node=button.parentElement;
-      for(let depth=0;node&&depth<8;depth++,node=node.parentElement) {
-        const t=node.textContent||'';
-        if(t.length<1200 && /Make Gas\s*\$2\.40\s*Again\s*Dad Hat/i.test(t)
-          && node.querySelector('img,[role="img"]')) {
-          node.style.setProperty('display','none','important');
-          node.dataset.hiddenSmallHat='true';
-          break;
+  const hat=/make\s*gas\s*\$?\s*2[.]40\s*again\s*dad\s*hat/i;
+  function hideTile() {
+    // Prefer catalog containers; never search the whole page for a featured panel.
+    const roots=[...document.querySelectorAll('#productGrid,[id*="product-grid"],[class*="product-grid"],[class*="productGrid"],[id*="catalog"],[class*="catalog"]')];
+    const scanRoots=roots.length?roots:[document.body];
+    for(const root of scanRoots) {
+      const controls=root.querySelectorAll('button,a,[role="button"]');
+      for(const control of controls) {
+        if(!/VIEW DETAILS/i.test((control.textContent||'').trim()))continue;
+        let el=control.parentElement;
+        for(let depth=0;el&&el!==root&&depth<10;depth++,el=el.parentElement){
+          const t=el.textContent||'';
+          if(t.length>1600)break;
+          if(hat.test(t)&&el.querySelector('img,[role="img"]')) {
+            el.style.setProperty('display','none','important');
+            el.setAttribute('data-vault-hidden-hat-tile','1');
+            break;
+          }
         }
       }
     }
   }
-  const run=()=>{removeSmallHatTile();setTimeout(removeSmallHatTile,900);setTimeout(removeSmallHatTile,2500);};
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});
-  else run();
+  const start=()=>{
+    hideTile();
+    // Small fixed number of checks for asynchronous catalog rendering, no observers.
+    [500,1500,3500,6500].forEach(ms=>setTimeout(hideTile,ms));
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
 })();
 
 
