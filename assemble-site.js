@@ -22,5 +22,8 @@ console.log('V053 website assembled and SHA-256 verified');
 // Inject the small recovery script after checksum verification, without editing the original V053 parts.
 const html = fs.readFileSync(output, 'utf8');
 if (!html.includes('</body>')) throw new Error('V053 HTML body closing tag missing');
-fs.writeFileSync(output, html.replace('</body>', '<script defer src="/image-recovery.js"></script></body>'));
+const repaired = html
+  .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/imperial-royal-dynasty.avif', '/assets/imperial-royal-dynasty.jpg')
+  .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/imperial-bad-boys.avif', '/assets/imperial-bad-boys.jpg');
+fs.writeFileSync(output, repaired.replace('</body>', '<script defer src="/image-recovery.js"></script></body>'));
 console.log('V053 image fallback enabled; product catalog and checkout unchanged');
