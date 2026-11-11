@@ -22,15 +22,19 @@ console.log('V053 website assembled and SHA-256 verified');
 // Inject the small recovery script after checksum verification, without editing the original V053 parts.
 const html = fs.readFileSync(output, 'utf8');
 if (!html.includes('</body>')) throw new Error('V053 HTML body closing tag missing');
-// Restore the two exact product photos already embedded in the approved V053 HTML.
-// Patch the source image URLs BEFORE the browser builds product cards or detail modals.
+// Write the original approved artwork as real image files, rather than giant data URIs
+// inside JavaScript product records. This also fixes product detail images.
 const angel = html.match(/class="vault-v009-main"\s+src="(data:image\/webp;base64,[^"]+)"/);
-const hat = html.match(/id="vault-cap-detail"[\s\S]{0,600}?<img\s+src="(data:image\/(?:png|webp|jpeg);base64,[^"]+)"/);
-if (!angel || !hat) throw new Error('Original Angel or Dad Hat artwork missing; refusing to deploy placeholders');
-console.log('Restoring original approved photos to product card and detail URLs');
+const hat = html.match(/id="vault-cap-detail"[\s\S]{0,600}?<img\s+src="(data:image\/png;base64,[^"]+)"/);
+if (!angel || !hat) throw new Error('Original Angel or Dad Hat artwork missing');
+const assetsDir=path.join(root,'assets');
+fs.mkdirSync(assetsDir,{recursive:true});
+fs.writeFileSync(path.join(assetsDir,'signature-angel-original.webp'),Buffer.from(angel[1].split(',')[1],'base64'));
+fs.writeFileSync(path.join(assetsDir,'make-gas-original.png'),Buffer.from(hat[1].split(',')[1],'base64'));
+console.log('Original product images extracted into real /assets/ files');
 const restored = html
-  .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/74f7a5565d40943399281ec1.webp', angel[1])
-  .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/make-gas-cap.png', hat[1]);
+  .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/74f7a5565d40943399281ec1.webp', '/assets/signature-angel-original.webp')
+  .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/make-gas-cap.png', '/assets/make-gas-original.png');
 const repaired = restored
   .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/imperial-royal-dynasty.avif', '/assets/imperial-royal-dynasty.jpg')
   .replaceAll('https://warm-medovik-b368bb.netlify.app/assets/imperial-bad-boys.avif', '/assets/imperial-bad-boys.jpg');
