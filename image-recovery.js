@@ -400,30 +400,27 @@
 })();
 
 
-// One-time, lightweight duplicate cleanup (no MutationObserver).
-// Preserve homepage/bottom featured hat panels and first catalog hat.
+// Owner correction: hide the small red hat tile in the product grid ONLY.
+// Preserve the large featured/bottom hat, its details and the existing cart.
 (() => {
-  function dedupeHatCatalog() {
-    const cards = [];
+  function hideSmallHatCatalogCard() {
     for (const el of document.querySelectorAll('button,a,[role="button"]')) {
       if (!/^VIEW DETAILS/i.test((el.textContent || '').trim())) continue;
       let card = el.parentElement;
       for (let depth=0; card && depth<7; depth++,card=card.parentElement) {
         const t=card.textContent || '';
-        if (t.length < 850 && /Make Gas \$2\.40 Again Dad Hat/i.test(t) &&
+        if (t.length < 850 && /Make Gas \\$2\\.40 Again Dad Hat/i.test(t) &&
             /VIEW DETAILS/i.test(t)) {
-          if (!cards.includes(card)) cards.push(card);
+          card.style.setProperty('display','none','important');
+          card.setAttribute('data-hidden-duplicate-hat','true');
           break;
         }
       }
     }
-    if (cards.length > 1) {
-      for (const extra of cards.slice(1)) extra.style.display='none';
-    }
   }
   if (document.readyState==='loading') {
-    document.addEventListener('DOMContentLoaded',()=>setTimeout(dedupeHatCatalog,1200),{once:true});
-  } else setTimeout(dedupeHatCatalog,1200);
+    document.addEventListener('DOMContentLoaded',()=>setTimeout(hideSmallHatCatalogCard,150),{once:true});
+  } else setTimeout(hideSmallHatCatalogCard,150);
 })();
 
 
