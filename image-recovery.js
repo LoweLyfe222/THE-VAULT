@@ -48,9 +48,15 @@
   const repair = async (img) => {
     if (repairing.has(img) || !img.isConnected) return;
     repairing.add(img);
-    const slug = productSlug(img);
+    const slug = ({'imperial-royal-dynasty':'imperial-meditation-royal-dynasty-hoodie-black','imperial-bad-boys':'imperial-meditation-bad-boys-hoodie-black'}[productSlug(img)] || productSlug(img));
     if (!slug || !/\/assets\//.test(img.src)) { placeholder(img); return; }
-    const url = await fetchImage(slug);
+    let url = await fetchImage(slug);
+    if (!url) {
+      try {
+        const response = await fetch('/.netlify/functions/product-image?slug=' + encodeURIComponent(slug));
+        if (response.ok) url = (await response.json()).image || '';
+      } catch {}
+    }
     if (!img.isConnected) return;
     if (!url || url === img.src) { placeholder(img); return; }
     img.onerror = () => placeholder(img);
