@@ -50,7 +50,7 @@ console.log('V053 image fallback enabled; product catalog and checkout unchanged
 
 // Put the sharing metadata near the start of the head for social crawlers.
 const siteUrl = 'https://thevaultempire.com/';
-const previewPath = 'assets/vault-approved-social-preview.jpg';
+const previewPath = 'assets/vault-facebook-share.jpg';
 if (!fs.existsSync(path.join(root, previewPath))) throw new Error('Approved social thumbnail missing');
 
 const openGraph = [
@@ -58,8 +58,8 @@ const openGraph = [
   '<meta property="og:title" content="THE VAULT — LoweLyfe Holdings LLC">',
   '<meta property="og:description" content="SURVYVAL • Meditating Monkey • Imperial Elephant • Imperial Meditation • I’m Dope. Shop the collections.">',
   `<meta property="og:url" content="${siteUrl}">`,
-  '<meta property="og:image" content="https://cdn.shopify.com/s/files/1/0865/3039/2307/files/the-vault-facebook-square-safe-preview.jpg?v=1794831649">',
-  '<meta property="og:image:secure_url" content="https://cdn.shopify.com/s/files/1/0865/3039/2307/files/the-vault-facebook-square-safe-preview.jpg?v=1794831649">',
+  `<meta property="og:image" content="${siteUrl}${previewPath}">`,
+  `<meta property="og:image:secure_url" content="${siteUrl}${previewPath}">`,
   '<meta property="og:image:type" content="image/jpeg">',
   '<meta property="og:image:width" content="1200">',
   '<meta property="og:image:height" content="630">',
