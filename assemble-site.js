@@ -70,3 +70,16 @@ const page = fs.readFileSync(output, 'utf8');
 if (!page.includes('</title>')) throw new Error('V053 page title closing tag missing');
 fs.writeFileSync(output, page.replace('</title>', '</title>' + openGraph));
 console.log('Approved THE VAULT social thumbnail installed');
+
+
+// Search-engine metadata only; preserve original V053 source, catalog and checkout.
+const seoTitle = 'THE VAULT | SURVYVAL Streetwear & Graphic Tees';
+const seoDescription = 'Shop THE VAULT by LoweLyfe Holdings LLC. Discover SURVYVAL streetwear, graphic tees and original apparel collections including Meditating Monkey and Imperial Elephant.';
+let seoPage = fs.readFileSync(output, 'utf8');
+if (!/<title[^>]*>[\\s\\S]*?<\\/title>/i.test(seoPage)) throw new Error('SEO title tag missing; refusing unsafe deploy');
+seoPage = seoPage.replace(/<title[^>]*>[\\s\\S]*?<\\/title>/i, '<title>' + seoTitle + '</title>');
+seoPage = seoPage.replace(/<meta\\s+[^>]*name=["']description["'][^>]*>/gi, '');
+seoPage = seoPage.replace(/<meta\\s+[^>]*content=["'][^"']*["'][^>]*name=["']description["'][^>]*>/gi, '');
+seoPage = seoPage.replace('</title>', '</title><meta name="description" content="' + seoDescription + '">');
+fs.writeFileSync(output, seoPage);
+console.log('THE VAULT Google search title and description updated; V053 parts and checkout unchanged');
