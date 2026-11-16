@@ -58,7 +58,7 @@ const openGraph = [
   '<meta property="og:title" content="THE VAULT — LoweLyfe Holdings LLC">',
   '<meta property="og:description" content="SURVYVAL • Meditating Monkey • Imperial Elephant • Imperial Meditation • I’m Dope. Shop the collections.">',
   `<meta property="og:url" content="${siteUrl}">`,
-  `<meta property="og:image" content="${siteUrl}${previewPath}">`,
+  '<meta property="og:image" content="https://cdn.shopify.com/s/files/1/0865/3039/2307/files/the-vault-facebook-square-safe-preview.jpg?v=1794831649">',
   '<meta property="og:image:type" content="image/jpeg">',
   '<meta property="og:image:width" content="1200">',
   '<meta property="og:image:height" content="630">',
