@@ -83,3 +83,9 @@ seoPage = seoPage.replace(/<meta\s+[^>]*content=["'][^"']*["'][^>]*name=["']desc
 seoPage = seoPage.replace('</title>', '</title><meta name="description" content="' + seoDescription + '">');
 fs.writeFileSync(output, seoPage);
 console.log('THE VAULT Google search title and description updated; V053 parts and checkout unchanged');
+// Add one approved product card without changing the original catalog or checkout.
+let finalHtml = fs.readFileSync(output, 'utf8');
+if (!finalHtml.includes('</body>')) throw new Error('Missing closing body tag');
+finalHtml = finalHtml.replace('</body>', '<script defer src="/estoy-long-sleeve.js"></script></body>');
+fs.writeFileSync(output, finalHtml);
+
