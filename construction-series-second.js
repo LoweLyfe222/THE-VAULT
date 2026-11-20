@@ -26,9 +26,20 @@
    const close=make('button','position:absolute;right:12px;top:8px;border:0;background:#303030;color:white;border-radius:50%;width:40px;height:40px;font-size:24px;','×');close.setAttribute('aria-label','Close');close.onclick=()=>overlay.remove();panel.append(close);
    const big=make('img','width:100%;max-height:350px;object-fit:contain;margin:25px auto 12px;');big.alt=name;if(photo)big.src=photo;panel.append(big);
    panel.append(make('h2','font-size:20px;margin:8px 0;',name),make('p','font-size:22px;color:#f0ce65;',price));
-   const checkout=make('a','display:block;background:#d4af37;color:#111;text-align:center;text-decoration:none;font-weight:bold;border-radius:7px;padding:14px;margin-top:16px;','Choose size & secure checkout');
-   checkout.href=host+'/products/'+slug;checkout.target='_blank';checkout.rel='noopener noreferrer';panel.append(checkout);
-   panel.append(make('p','font-size:12px;color:#aaa;','Product details stay in THE VAULT. Fourthwall handles size selection and secure checkout.'));
+   panel.append(make('p','font-size:14px;margin:12px 0 8px;','Choose your size'));
+   const sizes=make('div','display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;');
+   let selected='';
+   const checkout=make('a','display:block;background:#d4af37;color:#111;text-align:center;text-decoration:none;font-weight:bold;border-radius:7px;padding:14px;margin-top:16px;opacity:.55;pointer-events:none;','Select a size to continue');
+   for(const size of ['S','M','L','XL','2XL','3XL','4XL']){
+    const option=make('button','border:1px solid #aaa;background:#262626;color:white;padding:10px 14px;border-radius:5px;cursor:pointer;',size);
+    option.onclick=()=>{selected=size;for(const el of sizes.children){el.style.background='#262626';el.style.color='white';}option.style.background='#d4af37';option.style.color='#111';checkout.style.opacity='1';checkout.style.pointerEvents='auto';checkout.textContent='Continue to secure checkout — '+size;};
+    sizes.append(option);
+   }
+   panel.append(sizes);
+   checkout.href=host+'/products/'+slug;checkout.target='_blank';checkout.rel='noopener noreferrer';
+   checkout.onclick=e=>{if(!selected)e.preventDefault();};
+   panel.append(checkout);
+   panel.append(make('p','font-size:12px;color:#aaa;','Product browsing and size preview stay in THE VAULT. Confirm the available size and complete secure payment at Fourthwall.'));
    overlay.append(panel);overlay.onclick=e=>{if(e.target===overlay)overlay.remove();};document.body.append(overlay);
   };
   card.append(button);grid.append(card);
