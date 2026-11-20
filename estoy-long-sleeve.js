@@ -1,6 +1,8 @@
 // THE VAULT — in-site detail view for ESTOY long sleeve. Only this card is changed.
 (()=>{
- const href='https://the-vault-bit-shop.fourthwall.com/products/estoy-aqui-trabajando-construction-crew-long-sleeve';
+ const productId='a8a90aa7-5a17-4820-94b2-db19b4a43fef';
+ const store='https://the-vault-bit-shop.fourthwall.com';
+ let productHref='';
  const name='ESTOY AQUÍ TRABAJANDO – Construction Crew Long Sleeve';
  let imageUrl='';
  function make(tag,css,text){const e=document.createElement(tag);if(css)e.style.cssText=css;if(text)e.textContent=text;return e;}
@@ -15,7 +17,7 @@
   img.alt=name;if(imageUrl)img.src=imageUrl;panel.append(img);
   panel.append(make('h2','font-size:20px;line-height:1.3;margin:8px 0;',name));
   panel.append(make('p','font-size:22px;color:#f0ce65;font-weight:700;margin:8px 0;','$42.99'));
-  panel.append(make('p','font-size:14px;line-height:1.5;margin:12px 0;','Hard hats on. Safety vests up. Eyes on the job... well, most of the time! Construction-inspired blue-collar humor from THE VAULT.'));
+  panel.append(make('p','font-size:14px;line-height:1.5;margin:12px 0;','Hard work. Good humor. Blue-collar style. Construction-inspired artwork on a light-colored long sleeve from THE VAULT.'));
   panel.append(make('p','font-size:14px;margin:12px 0 6px;','Choose your size'));
   const sizes=make('div','display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;');
   let selected='';
@@ -26,8 +28,8 @@
    sizes.append(b);
   }
   panel.append(sizes);
-  buy.href=href;buy.rel='noopener noreferrer';buy.target='_blank';
-  buy.onclick=e=>{if(!selected)e.preventDefault();};
+  buy.href=productHref||'#';buy.rel='noopener noreferrer';buy.target='_blank';
+  buy.onclick=e=>{if(!selected||!productHref){e.preventDefault();buy.textContent=productHref?'Select a size':'Checkout link is being verified';}};
   panel.append(buy);
   panel.append(make('p','font-size:12px;color:#aaa;line-height:1.5;margin-top:10px;','Product details stay in THE VAULT. Secure checkout and final size confirmation are handled by Fourthwall.'));
   backdrop.append(panel);backdrop.onclick=e=>{if(e.target===backdrop)backdrop.remove();};document.body.append(backdrop);
@@ -44,8 +46,14 @@
   const label=make('strong','',name);const price=make('span','','$42.99');
   const shop=make('span','color:#f0ce65;text-decoration:underline;','View shirt & choose size');
   button.append(img,label,price,shop);card.append(button);grid.append(card);
-  fetch('/.netlify/functions/fourthwall?fwpath='+encodeURIComponent('/products/estoy-aqui-trabajando-construction-crew-long-sleeve')+'&currency=USD')
-   .then(r=>r.ok?r.json():null).then(p=>{
+  fetch('/.netlify/functions/fourthwall?fwpath=%2Fproducts&currency=USD')
+   .then(r=>r.ok?r.json():null).then(data=>{
+     const roots=[data?.products,data?.results,data?.items,data?.data?.products,data?.data?.items,data?.data,data];
+     const list=roots.find(x=>Array.isArray(x))||roots.map(x=>x?.items||x?.results).find(x=>Array.isArray(x))||[];
+     const p=list.find(x=>String(x.id||x.productId||x.uuid||'')===productId);
+     if(!p)return loadPublicPhoto();
+     const slug=p.slug||p.handle;
+     if(typeof slug==='string'&&/^[a-z0-9-]+$/.test(slug))productHref=store+'/products/'+slug;
      const candidates=[p?.images?.[0],p?.image,p?.imageUrl,p?.thumbnailUrl,p?.variants?.[0]?.images?.[0]];
      for(const c of candidates){const u=typeof c==='string'?c:c?.url||c?.src||c?.imageUrl;if(typeof u==='string'&&u.startsWith('https://')){setPhoto(u);return;}}
      return loadPublicPhoto();
