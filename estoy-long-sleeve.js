@@ -45,7 +45,17 @@
   const shop=make('span','color:#f0ce65;text-decoration:underline;','View shirt & choose size');
   button.append(img,label,price,shop);card.append(button);grid.append(card);
   fetch('/.netlify/functions/fourthwall?fwpath='+encodeURIComponent('/products/estoy-aqui-trabajando-construction-crew-long-sleeve')+'&currency=USD')
-   .then(r=>r.ok?r.json():null).then(p=>{if(!p)return;const candidates=[p.images?.[0],p.image,p.imageUrl,p.thumbnailUrl,p.variants?.[0]?.images?.[0]];for(const c of candidates){const u=typeof c==='string'?c:c?.url||c?.src||c?.imageUrl;if(typeof u==='string'&&u.startsWith('https://')){imageUrl=u;img.src=u;const detail=document.querySelector('#vault-estoy-detail img');if(detail)detail.src=u;break;}}}).catch(()=>{});
+   .then(r=>r.ok?r.json():null).then(p=>{
+     const candidates=[p?.images?.[0],p?.image,p?.imageUrl,p?.thumbnailUrl,p?.variants?.[0]?.images?.[0]];
+     for(const c of candidates){const u=typeof c==='string'?c:c?.url||c?.src||c?.imageUrl;if(typeof u==='string'&&u.startsWith('https://')){setPhoto(u);return;}}
+     return loadPublicPhoto();
+   }).catch(loadPublicPhoto);
+  function setPhoto(u){imageUrl=u;img.src=u;const detail=document.querySelector('#vault-estoy-detail img');if(detail)detail.src=u;}
+  function loadPublicPhoto(){
+    return fetch('/.netlify/functions/product-image?slug=estoy-aqui-trabajando-construction-crew-long-sleeve')
+      .then(r=>r.ok?r.json():null).then(p=>{if(p?.image)setPhoto(p.image);}).catch(()=>{});
+  }
+  img.onerror=()=>{if(img.dataset.fallbackTried)return;img.dataset.fallbackTried='1';loadPublicPhoto();};
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',insert,{once:true});else insert();
  new MutationObserver(()=>{if(!document.getElementById('vault-estoy-long-sleeve'))insert()}).observe(document.documentElement,{childList:true,subtree:true});
