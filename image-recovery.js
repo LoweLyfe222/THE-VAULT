@@ -215,6 +215,69 @@
   document.addEventListener('click',()=>setTimeout(missingPhotoRecovery,120),true);
 
 
+  // Recover only the six verified missing photos shown in the owner's screenshots.
+  // Use actual published Fourthwall images; never fabricate or substitute art.
+  const screenshotMissingTitles=[
+    'Bags Hoodie — Black',
+    'Five Jars Hoodie — Royal Blue',
+    'EZ Riders Tee — Black',
+    'Royal Crown Hoodie — Heather Gray',
+    'Medical Hoodie — Royal Blue',
+    'Crown Leaf Hoodie — Royal Blue'
+  ];
+  const screenshotKey=x=>String(x||'').toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]/g,'');
+  const screenshotCache=new Map();
+  let screenshotCatalogPromise;
+  const screenshotCatalog=()=>{
+    if(!screenshotCatalogPromise)screenshotCatalogPromise=fetch('/.netlify/functions/fourthwall?fwpath=%2Fproducts&currency=USD')
+      .then(r=>r.ok?r.json():null).then(getRecords).catch(()=>[]);
+    return screenshotCatalogPromise;
+  };
+  const screenshotImage=async title=>{
+    if(screenshotCache.has(title))return screenshotCache.get(title);
+    const promise=(async()=>{
+      const products=await screenshotCatalog();
+      const target=screenshotKey(title);
+      const p=products.find(x=>{
+        const n=screenshotKey(x.name||x.title);
+        return n===target||n.endsWith(target);
+      });
+      if(!p)return '';
+      let url=imageUrl(p);
+      const slug=p.slug||p.handle;
+      if(!url&&slug)url=await fetchImage(slug);
+      if(!url&&slug){
+        try{const response=await fetch('/.netlify/functions/product-image?slug='+encodeURIComponent(slug));if(response.ok)url=(await response.json()).image||'';}catch{}
+      }
+      return url;
+    })();
+    screenshotCache.set(title,promise);
+    return promise;
+  };
+  const restoreScreenshotPhotos=async()=>{
+    const nodes=[...document.querySelectorAll('[role="img"]')].filter(el=>/PRODUCT PHOTO COMING SOON/i.test(el.textContent||''));
+    for(const el of nodes){
+      const title=screenshotMissingTitles.find(t=>screenshotKey(el.textContent).includes(screenshotKey(t)));
+      if(!title||el.dataset.screenshotRecovery==='pending'||el.dataset.screenshotRecovery==='done')continue;
+      el.dataset.screenshotRecovery='pending';
+      const url=await screenshotImage(title);
+      if(!url||!el.isConnected){el.dataset.screenshotRecovery='done';continue;}
+      const img=document.createElement('img');img.alt=title;img.loading='lazy';
+      img.style.cssText='display:block;width:100%;height:auto;object-fit:contain';
+      img.onload=()=>{if(el.isConnected)el.replaceWith(img);};
+      img.onerror=()=>{el.dataset.screenshotRecovery='done';};
+      img.src=url;
+    }
+  };
+  let screenshotQueued=false;
+  const queueScreenshotRecovery=()=>{
+    if(screenshotQueued)return;screenshotQueued=true;
+    setTimeout(()=>{screenshotQueued=false;restoreScreenshotPhotos();},120);
+  };
+  new MutationObserver(queueScreenshotRecovery).observe(document.documentElement,{childList:true,subtree:true});
+  document.addEventListener('DOMContentLoaded',queueScreenshotRecovery,{once:true});
+  queueScreenshotRecovery();
+
   // The original V053 page already contains the APPROVED Signature Angel hoodie
   // mockup as a data URI in its feature-gallery template. Reuse those exact bytes.
   const originalArtwork = {};
