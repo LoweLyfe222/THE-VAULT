@@ -86,6 +86,6 @@ console.log('THE VAULT Google search title and description updated; V053 parts a
 // Add one approved product card without changing the original catalog or checkout.
 let finalHtml = fs.readFileSync(output, 'utf8');
 if (!finalHtml.includes('</body>')) throw new Error('Missing closing body tag');
-finalHtml = finalHtml.replace('</body>', '<script defer src="/estoy-long-sleeve.js"></script></body>');
+finalHtml = finalHtml.replace('</body>', '<script defer src="/estoy-long-sleeve.js"></script><script defer src="/construction-series-second.js"></script></body>');
 fs.writeFileSync(output, finalHtml);
 
