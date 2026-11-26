@@ -1,48 +1,41 @@
-// THE VAULT: storyboard boards -> SHOP ALL PIECES. Only storyboard navigation is changed.
+// THE VAULT — TEMPORARILY HIDE STORYBOARDS. Restore previous GitHub version to re-enable.
+// This script is loaded by assemble-site.js. It does not edit product/catalog/checkout data.
 (function () {
   'use strict';
-  const norm = s => String(s || '').replace(/\s+/g, ' ').trim().toUpperCase();
-  function shopAll() {
-    // Search visible text rather than guessing an ID or heading tag.
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    let node;
-    while ((node = walker.nextNode())) {
-      if (norm(node.nodeValue) !== 'SHOP ALL PIECES') continue;
-      const el = node.parentElement;
-      if (!el || el.closest('script,style,template,[hidden]')) continue;
-      return el.closest('section') || el.closest('header') || el;
-    }
-    // Common alternate label on the same storefront.
-    for (const el of document.querySelectorAll('h1,h2,h3,h4,h5,h6,a,button')) {
-      if (norm(el.textContent).includes('SHOP ALL PIECES')) return el;
-    }
-    return null;
-  }
-  function board(el) {
-    if (!(el instanceof Element)) return false;
-    // Don't intercept genuine product controls.
-    if (el.closest('select,input,textarea,[data-product-id],[data-add-to-cart]')) return false;
-    // Storyboard call-to-action or linked image/card.
-    for (let p = el, depth = 0; p && depth < 9; p = p.parentElement, depth++) {
-      const text = norm(p.textContent);
-      if (text.includes('VIEW OUTFIT') && text.includes('PIECES') && text.length < 700) {
-        if (el.closest('a,button') || p.querySelector('img')) return true;
+  const normalize = value => String(value || '').replace(/\s+/g, ' ').trim().toUpperCase();
+  const isStoryboardCTA = el => {
+    const text = normalize(el.textContent);
+    return text.includes('VIEW OUTFIT') && text.includes('PIECES') && text.length < 100;
+  };
+  function hideBoards() {
+    // Scope exclusively to cards containing the known storyboard CTA.
+    const links = document.querySelectorAll('a, button');
+    for (const link of links) {
+      if (!isStoryboardCTA(link)) continue;
+      // Find the nearest containing storyboard card, never a whole collection or product grid.
+      let card = null;
+      for (let el = link.parentElement, depth = 0; el && depth < 6; el = el.parentElement, depth++) {
+        if (el.matches('main,section,body,html')) break;
+        if (!el.querySelector('img')) continue;
+        if (normalize(el.textContent).length > 600) break;
+        card = el;
+        break;
+      }
+      if (card && !card.hasAttribute('data-vault-storyboard-hidden')) {
+        card.setAttribute('data-vault-storyboard-hidden', 'true');
+        card.style.setProperty('display', 'none', 'important');
+      } else if (!card && !link.hasAttribute('data-vault-storyboard-hidden')) {
+        // Safe fallback: hide only the broken storyboard link, not surrounding shopping content.
+        link.setAttribute('data-vault-storyboard-hidden', 'true');
+        link.style.setProperty('display', 'none', 'important');
       }
     }
-    return false;
   }
-  document.addEventListener('click', function (event) {
-    if (!board(event.target)) return;
-    // Stop broken board destinations even if the section is not found.
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    const target = shopAll();
-    if (target) {
-      target.scrollIntoView({behavior:'smooth',block:'start'});
-    } else {
-      // Shop heading may be dynamically rendered; do not send shopper to dead link.
-      const possible = document.querySelector('[id*="shop" i], [id*="products" i], [class*="shop-all" i]');
-      if (possible) possible.scrollIntoView({behavior:'smooth',block:'start'});
-    }
-  }, true);
+  function start() {
+    hideBoards();
+    const observer = new MutationObserver(() => hideBoards());
+    observer.observe(document.body, {childList:true, subtree:true});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once:true});
+  else start();
 }());
