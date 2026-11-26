@@ -1,34 +1,48 @@
-// THE VAULT — storyboard clicks scroll to SHOP ALL PIECES. No catalog/checkout edits.
+// THE VAULT: storyboard boards -> SHOP ALL PIECES. Only storyboard navigation is changed.
 (function () {
   'use strict';
-  function clean(s) { return String(s || '').replace(/\s+/g, ' ').trim().toUpperCase(); }
-  function target() {
-    const nodes = Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6,a,button,[id],strong,span,div'));
-    const exact = nodes.filter(el => clean(el.textContent) === 'SHOP ALL PIECES');
-    const heading = exact.find(el => /^H[1-6]$/.test(el.tagName));
-    if (heading) return heading;
-    if (exact.length) return exact.sort((a,b) => a.textContent.length - b.textContent.length)[0];
-    return nodes.find(el => /^H[1-6]$/.test(el.tagName) && clean(el.textContent).includes('SHOP ALL PIECES')) || null;
+  const norm = s => String(s || '').replace(/\s+/g, ' ').trim().toUpperCase();
+  function shopAll() {
+    // Search visible text rather than guessing an ID or heading tag.
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (norm(node.nodeValue) !== 'SHOP ALL PIECES') continue;
+      const el = node.parentElement;
+      if (!el || el.closest('script,style,template,[hidden]')) continue;
+      return el.closest('section') || el.closest('header') || el;
+    }
+    // Common alternate label on the same storefront.
+    for (const el of document.querySelectorAll('h1,h2,h3,h4,h5,h6,a,button')) {
+      if (norm(el.textContent).includes('SHOP ALL PIECES')) return el;
+    }
+    return null;
   }
-  function isBoardClick(el) {
+  function board(el) {
     if (!(el instanceof Element)) return false;
-    // Only storyboard cards with a VIEW OUTFIT & PIECES action; never product cards.
-    const cta = el.closest('a,button');
-    if (cta && clean(cta.textContent).includes('VIEW OUTFIT') && clean(cta.textContent).includes('PIECES')) return true;
-    for (let p=el, n=0; p && n<7; p=p.parentElement,n++) {
-      if (!p.querySelectorAll) continue;
-      const actions=Array.from(p.querySelectorAll('a,button'));
-      if (actions.some(a => clean(a.textContent).includes('VIEW OUTFIT') && clean(a.textContent).includes('PIECES')) &&
-          p.querySelector('img') && clean(p.textContent).length < 450) return true;
+    // Don't intercept genuine product controls.
+    if (el.closest('select,input,textarea,[data-product-id],[data-add-to-cart]')) return false;
+    // Storyboard call-to-action or linked image/card.
+    for (let p = el, depth = 0; p && depth < 9; p = p.parentElement, depth++) {
+      const text = norm(p.textContent);
+      if (text.includes('VIEW OUTFIT') && text.includes('PIECES') && text.length < 700) {
+        if (el.closest('a,button') || p.querySelector('img')) return true;
+      }
     }
     return false;
   }
   document.addEventListener('click', function (event) {
-    if (!isBoardClick(event.target)) return;
-    const section=target();
-    if (!section) return;
+    if (!board(event.target)) return;
+    // Stop broken board destinations even if the section is not found.
     event.preventDefault();
     event.stopImmediatePropagation();
-    section.scrollIntoView({behavior:'smooth',block:'start'});
+    const target = shopAll();
+    if (target) {
+      target.scrollIntoView({behavior:'smooth',block:'start'});
+    } else {
+      // Shop heading may be dynamically rendered; do not send shopper to dead link.
+      const possible = document.querySelector('[id*="shop" i], [id*="products" i], [class*="shop-all" i]');
+      if (possible) possible.scrollIntoView({behavior:'smooth',block:'start'});
+    }
   }, true);
 }());
