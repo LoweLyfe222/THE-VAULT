@@ -1,36 +1,34 @@
-// THE VAULT: storyboard navigation only. No product, cart, or layout changes.
+// THE VAULT — storyboard clicks scroll to SHOP ALL PIECES. No catalog/checkout edits.
 (function () {
   'use strict';
-  function label(node) {
-    return (node && node.textContent || '').replace(/\s+/g, ' ').trim().toUpperCase();
+  function clean(s) { return String(s || '').replace(/\s+/g, ' ').trim().toUpperCase(); }
+  function target() {
+    const nodes = Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6,a,button,[id],strong,span,div'));
+    const exact = nodes.filter(el => clean(el.textContent) === 'SHOP ALL PIECES');
+    const heading = exact.find(el => /^H[1-6]$/.test(el.tagName));
+    if (heading) return heading;
+    if (exact.length) return exact.sort((a,b) => a.textContent.length - b.textContent.length)[0];
+    return nodes.find(el => /^H[1-6]$/.test(el.tagName) && clean(el.textContent).includes('SHOP ALL PIECES')) || null;
   }
-  function shopTarget() {
-    const matches = Array.from(document.querySelectorAll('h1,h2,h3,h4,h5,h6,a,button,[id]'))
-      .filter(el => label(el) === 'SHOP ALL PIECES');
-    return matches.find(el => /^H[1-6]$/.test(el.tagName)) || matches[0] || null;
-  }
-  function storyboardLink(node) {
-    if (!node || !node.closest) return null;
-    const direct = node.closest('a,button');
-    if (direct && /^VIEW OUTFIT\s*&\s*PIECES\s*(?:↗|→|›)?$/i.test((direct.textContent || '').trim())) return direct;
-    // Image/card taps count only when the containing board has this exact CTA.
-    let parent = node;
-    for (let i = 0; parent && i < 5; i++, parent = parent.parentElement) {
-      if (parent.querySelector) {
-        const links = Array.from(parent.querySelectorAll('a,button'));
-        const match = links.find(el => /^VIEW OUTFIT\s*&\s*PIECES\s*(?:↗|→|›)?$/i.test((el.textContent || '').trim()));
-        if (match && parent.querySelector('img') && label(parent).length < 260) return match;
-      }
+  function isBoardClick(el) {
+    if (!(el instanceof Element)) return false;
+    // Only storyboard cards with a VIEW OUTFIT & PIECES action; never product cards.
+    const cta = el.closest('a,button');
+    if (cta && clean(cta.textContent).includes('VIEW OUTFIT') && clean(cta.textContent).includes('PIECES')) return true;
+    for (let p=el, n=0; p && n<7; p=p.parentElement,n++) {
+      if (!p.querySelectorAll) continue;
+      const actions=Array.from(p.querySelectorAll('a,button'));
+      if (actions.some(a => clean(a.textContent).includes('VIEW OUTFIT') && clean(a.textContent).includes('PIECES')) &&
+          p.querySelector('img') && clean(p.textContent).length < 450) return true;
     }
-    return null;
+    return false;
   }
   document.addEventListener('click', function (event) {
-    const link = storyboardLink(event.target);
-    if (!link) return;
-    const target = shopTarget();
-    if (!target) return; // Never hijack a click if the destination is absent.
+    if (!isBoardClick(event.target)) return;
+    const section=target();
+    if (!section) return;
     event.preventDefault();
-    event.stopPropagation();
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    event.stopImmediatePropagation();
+    section.scrollIntoView({behavior:'smooth',block:'start'});
   }, true);
 }());
